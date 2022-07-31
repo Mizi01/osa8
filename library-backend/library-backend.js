@@ -1,9 +1,10 @@
-const { ApolloServer, gql } = require('apollo-server')
+const { ApolloServer, gql, UserInputError } = require('apollo-server')
 const { v1: uuid } = require('uuid')
 const mongoose = require('mongoose')
 const config = require('./config')
 const Book = require('./models/book')
 const Author = require('./models/author')
+const book = require('./models/book')
 
 mongoose.connect(config.MONGODB_URI)
   .then(() => {
@@ -81,16 +82,30 @@ const resolvers = {
   Mutation: {
     addBook: async (root, args) => {
       let author = await Author.findOne({ name: args.author })
+
       if(!author) {
+        try {
         author = await Author({name: args.author})
-        console.log("uusi authori lisättydw")
-        author.save()
+        console.log("uusi authori lisätty")
+        await author.save()
+        } catch (error) {
+          throw new UserInputError(error.message, {
+            invalidArgs: args,
+          })
+        }
       }
-      console.log(author)
+      
+      try {
       const book = await Book({...args, author})
       return book.save()
+      } catch (error) {
+        throw new UserInputError(error.message, {
+          invalidArgs: args
+        })
+      }
     },
     editAuthor: async (root, args) => {
+      try {
       const author = await Author.find({ name: args.name })
       console.log(author)
       if(author) {
@@ -98,6 +113,11 @@ const resolvers = {
         const updatedAuthorV2 = await Author.findById(updatedAuthor)
         return updatedAuthorV2
       }
+    } catch (error) {
+      throw new UserInputError(error.message, {
+        invalidArgs: args
+      })
+    }
       return null
     }
   }
