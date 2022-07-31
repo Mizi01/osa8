@@ -12,7 +12,7 @@ const Authors = (props) => {
   if(results.loading) {
     return (
       <div>
-        <h2>books</h2>
+        <h2>authors</h2>
         <div>loading...</div>
       </div>
     )
