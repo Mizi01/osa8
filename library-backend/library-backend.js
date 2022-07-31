@@ -56,32 +56,34 @@ const resolvers = {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
     allBooks: async (root, args) => {
+      const author = await Author.findOne({name: args.author})
+
       if(!args.author && !args.genre) {
         return Book.find({})
       }
       if(args.author && !args.genre) {
-      return books.filter(p => p.author===args.author)
+        console.log(author.id)
+      return await Book.find({author: author.id})
       }
       if(args.genre && !args.author) {
-        console.log(args)
-        return books.filter(p => p.genres.find(s => s === args.genre) === args.genre)
+        return await Book.find({genres: args.genre})
       }
       return (
-        books.filter(p => p.genres.find(s => s === args.genre) === args.genre).filter(p => p.author===args.author)
+       await Book.find({genres: args.genre, author: author.id})
       )
     },
     allAuthors: async (root, args) => Author.find({}),
   },
 
   Author : {
-    bookCount: (root) => books.filter(book => book.author == root.name).length
+    bookCount: async (root) => await Book.countDocuments({ author: root.id })
   },
   Mutation: {
     addBook: async (root, args) => {
       let author = await Author.findOne({ name: args.author })
       if(!author) {
         author = await Author({name: args.author})
-        console.log("uusi authori lisätty")
+        console.log("uusi authori lisättydw")
         author.save()
       }
       console.log(author)
@@ -89,11 +91,12 @@ const resolvers = {
       return book.save()
     },
     editAuthor: async (root, args) => {
-      const author = authors.find(p => p.name === args.name)
+      const author = await Author.find({ name: args.name })
       console.log(author)
       if(author) {
-       author.born = args.setBornTo
-       return author 
+        const updatedAuthor = await Author.findByIdAndUpdate(author, { born: args.setBornTo, new: true }) 
+        const updatedAuthorV2 = await Author.findById(updatedAuthor)
+        return updatedAuthorV2
       }
       return null
     }
