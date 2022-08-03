@@ -1,4 +1,4 @@
-import { useApolloClient, useQuery } from '@apollo/client'
+import { useApolloClient, useQuery, useLazyQuery } from '@apollo/client'
 import { useState, useEffect } from 'react'
 import AuthorBorn from './components/AuthorBorn'
 import Authors from './components/Authors'
@@ -12,10 +12,12 @@ const App = () => {
   const client = useApolloClient()
   const [page, setPage] = useState('authors')
   const [token, setToken] = useState(null)
-  let user = useQuery(USER)
+  const [user, results] = useLazyQuery(USER, {
+    nextFetchPolicy: "network-only"
+  })
   
   console.log(token)
-  console.log(user)
+  console.log(results)
 
   const logout = () => {
     setToken(null)
@@ -30,11 +32,17 @@ const App = () => {
     if (!token) {
       const userToken = localStorage.getItem('book-user-token')
       if (userToken) {
-        setToken(userToken)
+        setToken(userToken) 
       }
     }
+
+    if(!results.data) {
+    user()
+    console.log("user triggered but different")
+    console.log(results)
+    }
     
-  }, [token])
+  }, [token]) // eslint-disable-line
 
   if (user.loading) {
     return <div>Loading...</div>
@@ -68,7 +76,7 @@ const App = () => {
       <AuthorBorn show={page === 'born'} />
 
       {(page==='recommended') ? (
-      <Recommended show={page === 'recommended'} user={user.data.me} />
+      <Recommended show={page === 'recommended'} user={results.data.me} getUser={user} />
       ):(<></>)}
     </div>
   )

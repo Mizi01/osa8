@@ -50,6 +50,7 @@ const typeDefs = gql`
     allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author]!
     me: User
+    userBooks: [Book]
   }
 
   type Mutation {
@@ -83,17 +84,17 @@ const resolvers = {
       const author = await Author.findOne({name: args.author})
 
       if(!args.author && !args.genre) {
-        return Book.find({})
+        return Book.find({}).populate('author')
       }
       if(args.author && !args.genre) {
         console.log(author.id)
-      return await Book.find({author: author.id})
+      return await Book.find({author: author.id}).populate('author')
       }
       if(args.genre && !args.author) {
-        return await Book.find({genres: args.genre})
+        return await Book.find({genres: args.genre}).populate('author')
       }
       return (
-       await Book.find({genres: args.genre, author: author.id})
+       await Book.find({genres: args.genre, author: author.id}).populate('author')
       )
     },
     allAuthors: async (root, args) => Author.find({}),
@@ -105,6 +106,8 @@ const resolvers = {
 
   Mutation: {
     addBook: async (root, args, context) => {
+      console.log(context)
+      console.log(args)
       if (!context.currentUser) {
         throw new AuthenticationError('not authenticated')
       }
@@ -132,6 +135,7 @@ const resolvers = {
       }
     },
     editAuthor: async (root, args, context) => {
+      console.log(context)
       if (!context.currentUser) {
         throw new AuthenticationError('not authenticated')
       }
@@ -181,11 +185,14 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: async ({ req }) => {
+    
     const auth = req ? req.headers.authorization : null
-
     if (auth && auth.toLowerCase().startsWith('bearer ')) {
       const decodedToken = jwt.verify(auth.substring(7), JWT_SECRET)
+      console.log(decodedToken)
+      
       const currentUser = await User.findById(decodedToken.id)
+      console.log(currentUser)
       return { currentUser }
     }
   }

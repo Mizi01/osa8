@@ -2,11 +2,15 @@ import { useQuery } from '@apollo/client'
 import { useEffect, useState } from 'react'
 import { ALL_GENRES } from '../queries'
 
-const Recommended =  ({ user }) => {
+const Recommended =  ({ user, getUser }) => {
     const [books, setBooks] = useState([])
     const resultsWithGenre = useQuery(ALL_GENRES, {
     variables: {genreToFind: user.favoriteGenre},
   })
+
+  useEffect(()=> {
+    getUser()
+  }, []) // eslint-disable-line
 
   
 
@@ -17,6 +21,8 @@ const Recommended =  ({ user }) => {
     ) : console.log('')
     }, [books] // eslint-disable-line
     )
+
+
 
  console.log(books)
 
